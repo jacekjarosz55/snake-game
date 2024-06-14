@@ -201,24 +201,15 @@ void Game::drawSnake() {
   // draw the rest
   for (int i = 1; i < snakeBody.size() - 1; i++) {
     // TODO: check previous and next element to determine which tile to draw
-    auto prevPart = snakeBody[i-1];
-    auto part = snakeBody[i];
-    auto nextPart = snakeBody[i+1];
+    Position prevPart = snakeBody[i-1];
+    Position part = snakeBody[i];
+    Position nextPart = snakeBody[i+1];
 
     bool isTurn = !(prevPart.x == nextPart.x || prevPart.y == nextPart.y);
-
-    if (isTurn) {
-
-    } else { // not isTurn
-      if (nextPart.y == prevPart.y)  {
-        angle = 0;
-      }
-      else {
-        angle = 0.5*PI;
-      }
+    angle = 0;
+    if (!isTurn && nextPart.y != prevPart.y) {
+        angle = 0.5 * PI;
     }
-
-    std::cout << "drawing angle " << angle << "\n";
     al_draw_rotated_bitmap(
       spritesheet->get(isTurn ? SNAKE_TURN_SPRITE : SNAKE_BODY_SPRITE),
       halfsize,
