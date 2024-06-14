@@ -6,10 +6,12 @@
 #include <allegro5/bitmap_io.h>
 #include <cstdlib>
 #include <iostream>
+#include <sstream>
 
 #include "Game.hpp"
 #include "InitializationException.hpp"
 #include "Util.hpp"
+
 
 Game::Game() {
   mustInit(al_init(), "allegro");
@@ -40,8 +42,7 @@ Game::Game() {
 
 
   // initialize game;
-
-  snake = new Snake(0,0,5, SNAKE_DOWN);
+  state = GAME_MENU;
   spawnFruit();
 
   // game loop
@@ -55,8 +56,15 @@ Game::Game() {
 
     switch(event.type) {
       case ALLEGRO_EVENT_KEY_DOWN:
-        onKeyDown(event.keyboard);
-        break;
+          switch (state) {
+          case GAME_MENU:
+              onKeyDownMenu(event.keyboard);
+              break;
+          case GAME_PLAYING:
+              onKeyDownGame(event.keyboard);
+              break;
+          }
+          break;
       case ALLEGRO_EVENT_DISPLAY_CLOSE:
         exit = true;
         break;
@@ -78,7 +86,23 @@ Game::Game() {
   }
 }
 
+
 void Game::update() {
+    switch (state) {
+    case GAME_MENU:
+        updateMenu();
+        break;
+    case GAME_PLAYING:
+        updateGame();
+        break;
+    }
+}
+
+void Game::updateMenu() {
+
+}
+
+void Game::updateGame() {
   frameCounter++;
   // TODO: replace '4' with snake speed
   if (frameCounter % 4 == 0) {
@@ -103,8 +127,15 @@ void Game::update() {
   }
 }
 
-// kinda weird but this is the only input we need so
-void Game::onKeyDown(ALLEGRO_KEYBOARD_EVENT event) {
+
+void Game::onKeyDownMenu(ALLEGRO_KEYBOARD_EVENT event) {
+    if (event.keycode == ALLEGRO_KEY_SPACE) {
+        initGame();
+    }
+}
+
+
+void Game::onKeyDownGame(ALLEGRO_KEYBOARD_EVENT event) {
   if (event.keycode == ALLEGRO_KEY_ESCAPE) {
     exit = true;
   }
@@ -124,6 +155,9 @@ void Game::onKeyDown(ALLEGRO_KEYBOARD_EVENT event) {
 }
 
 
+void Game::drawMenu() {
+    al_clear_to_color(al_map_rgb(0, 255, 0));
+}
 
 void Game::draw() {
   // draw on the game buffer
@@ -138,6 +172,8 @@ void Game::draw() {
   al_draw_scaled_bitmap(gameBuffer, 0, 0, BUFFER_W, BUFFER_H, 0, 0, BUFFER_W * WINDOW_SCALE, BUFFER_H * WINDOW_SCALE, 0);
   al_flip_display();
 }
+
+
 
 
 void Game::drawSnake() {
@@ -227,13 +263,28 @@ void Game::drawFruits() {
   }
 }
 
+void Game::initGame()
+{
+    state = GAME_PLAYING;
+    score = 0;
+    if (snake) {
+        delete snake;
+    }
+    snake = new Snake(0, 0, 5, SNAKE_DOWN);
+
+}
+
 void Game::spawnFruit() {
-  Position fruit;
+  Position fruit{};
   do {
     fruit.x = rand()%TILES_X;
     fruit.y = rand()%TILES_Y;
   } while (snake->isInside(fruit));
   fruits.push_back(fruit);
+}
+
+void Game::loadMaps() {
+
 }
 
 

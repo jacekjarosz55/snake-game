@@ -10,9 +10,14 @@
 #include "Snake.hpp"
 #include "Spritesheet.hpp"
 
+enum GameState {
+    GAME_MENU,
+    GAME_PLAYING
+};
+
+
 class Game {
 private:
-
   const unsigned WINDOW_SCALE = 1;
   const unsigned TILE_SIZE = 32;
   const unsigned TILES_X = 20;
@@ -33,17 +38,32 @@ private:
 
   Snake *snake;
 
+  GameState state;
+
+  std::vector<std::vector<Position>> maps;
+
   bool needsRedraw = false;
   bool exit = false;
+  int score = -1;
+
 
   std::vector<Position> fruits;
   
   void update();
-  void onKeyDown(ALLEGRO_KEYBOARD_EVENT event);
+  void loadMaps();
+  void onKeyDownGame(ALLEGRO_KEYBOARD_EVENT event);
+  void onKeyDownMenu(ALLEGRO_KEYBOARD_EVENT event);
+  bool collidesWithMap(Position pos);
   void spawnFruit();
   void draw();
   void drawSnake();
   void drawFruits();
+  void initGame();
+  void initMenu();
+  void updateGame();
+  void updateMenu();
+  void drawGame();
+  void drawMenu();
 public:
   Game();
   ~Game();
