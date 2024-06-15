@@ -138,6 +138,7 @@
   <ItemGroup>
     <ClInclude Include="Game.hpp" />
     <ClInclude Include="InitializationException.hpp" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="Snake.hpp" />
     <ClInclude Include="Spritesheet.hpp" />
     <ClInclude Include="Util.hpp" />
@@ -156,6 +157,15 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="map0.txt" />
+    <Text Include="map1.txt" />
+    <Text Include="map2.txt" />
+    <Text Include="map3.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Font Include="Roboto-Bold.ttf" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

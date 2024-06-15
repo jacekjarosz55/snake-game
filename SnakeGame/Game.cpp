@@ -1,5 +1,6 @@
-#include <allegro5/allegro5.h>
+﻿#include <allegro5/allegro5.h>
 #include <allegro5/allegro_font.h>
+#include <allegro5/allegro_ttf.h>
 #include <allegro5/allegro_image.h>
 #include <allegro5/bitmap.h>
 #include <allegro5/bitmap_draw.h>
@@ -7,6 +8,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <sstream>
+#include <fstream>
 
 #include "Game.hpp"
 #include "InitializationException.hpp"
@@ -17,6 +19,8 @@ Game::Game() {
   mustInit(al_init(), "allegro");
   mustInit(al_install_keyboard(), "keyboard module");
   mustInit(al_init_image_addon(), "image addon");
+   mustInit(al_init_font_addon(), "font addon");
+  mustInit(al_init_ttf_addon(), "ttf addon");
 
   timer = al_create_timer(1.0 / 30.0); 
   mustInit(timer, "timer");
@@ -29,7 +33,7 @@ Game::Game() {
   display = al_create_display(BUFFER_W*WINDOW_SCALE, BUFFER_H*WINDOW_SCALE);
   mustInit(display, "display");
 
-  font = al_create_builtin_font();
+  font = al_load_ttf_font("Roboto-Bold.ttf",fontSize,NULL);
   mustInit(font, "font");
 
   spritesheet = new Spritesheet("spritesheet.png", 32);
@@ -40,11 +44,8 @@ Game::Game() {
   al_register_event_source(eventQueue, al_get_timer_event_source(timer));
 
 
-
-  // initialize game;
-  state = GAME_MENU;
-  spawnFruit();
-
+  initMenu();
+  
   // game loop
   // could be split into a separate method
   ALLEGRO_EVENT event;
@@ -73,19 +74,71 @@ Game::Game() {
         needsRedraw = true;
         break;
     }
-
     if(exit) {
       break;
     }
-
     if (needsRedraw && al_is_event_queue_empty(eventQueue)) {
-      draw();
-      needsRedraw = false;
+        draw();
+        needsRedraw = false;
     }
-
   }
 }
 
+bool Game::collidesWithMap(Position pos) {
+    for (Position& tile : mapData) {
+        if (pos.x == tile.x && pos.y == tile.y) return true;
+    }
+    return false;
+}
+
+
+void Game::drawMap() {
+
+
+    for (Position &tile : mapData) {
+        al_draw_bitmap(spritesheet->get(5), tile.x*TILE_SIZE, tile.y*TILE_SIZE, NULL);
+    }
+}
+
+void Game::loadMap() {
+    std::ifstream mapfile;
+    std::stringstream filename;
+    filename << "map" << mapIndex << ".txt";
+    mapfile.open(filename.str());
+
+    if (!mapfile.is_open()) {
+        throw new InitializationException(filename.str());
+    }
+    mapData.clear();
+    std::string line;
+    Position currentPos{};
+    while (std::getline(mapfile, line)) {
+        for (char x : line) {
+            if (x == '0') {
+                currentPos.x += 1;
+            }
+            if (x == '1') {
+                mapData.push_back(currentPos);
+                currentPos.x += 1;
+            }
+        }
+        currentPos.y += 1;
+        currentPos.x = 0;
+    }
+    mapfile.close();
+}
+
+void Game::initGame() {
+    state = GAME_PLAYING;
+    if (snake) {
+        delete snake;
+    }
+    snake = new Snake(4, 4, 2, SNAKE_RIGHT);
+    score = 0;
+    loadMap();
+    fruits.clear();
+    spawnFruit();
+}
 
 void Game::update() {
     switch (state) {
@@ -106,18 +159,19 @@ void Game::updateGame() {
   frameCounter++;
   // TODO: replace '4' with snake speed
   if (frameCounter % 4 == 0) {
-
     snake->step();
+    score += 1;
     auto head = snake->getHead();
-    if (snake->hasCollidedWithSelf() || 
+    if (snake->hasCollidedWithSelf() || collidesWithMap(head) || 
       head.x < 0 || head.x >= TILES_X || head.y < 0 || head.y >= TILES_Y) {
-      exit = true;
+        initMenu();
     }
 
 
     for (int i = 0; i < fruits.size(); i++) {
       if(snake->hasCollidedWith(fruits[i])) {
         fruits.erase(fruits.begin() + i);
+        score += 10;
         snake->addLength(1);
         spawnFruit();
         break;
@@ -132,12 +186,26 @@ void Game::onKeyDownMenu(ALLEGRO_KEYBOARD_EVENT event) {
     if (event.keycode == ALLEGRO_KEY_SPACE) {
         initGame();
     }
+    if (event.keycode == ALLEGRO_KEY_ESCAPE) {
+        exit = true;
+    }
+
+    if (event.keycode == ALLEGRO_KEY_RIGHT) {
+        mapIndex = (mapIndex + 1) % mapCount;
+    }
+
+    if (event.keycode == ALLEGRO_KEY_LEFT) {
+        mapIndex = (mapIndex - 1) % mapCount;
+    }
 }
 
+void Game::initMenu() {
+    state = GAME_MENU;
+}
 
 void Game::onKeyDownGame(ALLEGRO_KEYBOARD_EVENT event) {
   if (event.keycode == ALLEGRO_KEY_ESCAPE) {
-    exit = true;
+      initMenu();
   }
 
   if (event.keycode == ALLEGRO_KEY_LEFT) {
@@ -156,17 +224,46 @@ void Game::onKeyDownGame(ALLEGRO_KEYBOARD_EVENT event) {
 
 
 void Game::drawMenu() {
-    al_clear_to_color(al_map_rgb(0, 255, 0));
+    
+    std::stringstream mapText, snakeText;
+    mapText << "MAP: " << mapIndex;
+
+    snakeText << "SNAKE";
+    if (score >= 0) {
+        snakeText << ", WYNIK: " << score;
+    }
+
+
+    al_clear_to_color(al_map_rgb(0, 0, 0));
+    al_draw_text(font, al_map_rgb(255, 255, 255), 10, fontSize, NULL, snakeText.str().c_str());
+    al_draw_text(font, al_map_rgb(255, 255, 255), 10, fontSize*2, NULL, mapText.str().c_str());
+    al_draw_text(font, al_map_rgb(255, 255, 255), 10, fontSize*3, NULL, "Arrow keys: select map");
+    al_draw_text(font, al_map_rgb(255, 255, 255), 10, fontSize*4, NULL, "Space: start game");
+    al_draw_text(font, al_map_rgb(255, 255, 255), 10, fontSize*5, NULL, "Escape: exit game");
+    al_flip_display();
 }
 
 void Game::draw() {
+    switch (state) {
+    case GAME_MENU:
+        drawMenu();
+        break;
+    case GAME_PLAYING:
+        drawGame();
+        break;
+    }
+}
+
+void Game::drawGame() { 
   // draw on the game buffer
   al_set_target_bitmap(gameBuffer); 
   al_clear_to_color(al_map_rgb(0,0,0));
 
+  drawBackground();
+  drawMap();
   drawFruits();
   drawSnake();
-  
+
   // draw the buffer onto the window
   al_set_target_backbuffer(display); 
   al_draw_scaled_bitmap(gameBuffer, 0, 0, BUFFER_W, BUFFER_H, 0, 0, BUFFER_W * WINDOW_SCALE, BUFFER_H * WINDOW_SCALE, 0);
@@ -177,10 +274,9 @@ void Game::draw() {
 
 
 void Game::drawSnake() {
-  const unsigned SNAKE_HEAD_SPRITE = 0;
-  const unsigned SNAKE_BODY_SPRITE = 1;
-  const unsigned SNAKE_TURN_SPRITE = 2;
-  const unsigned SNAKE_TAIL_SPRITE = 6;
+  const unsigned SNAKE_HEAD_SPRITE = 8;
+  const unsigned SNAKE_BODY_SPRITE = 9;
+  const unsigned SNAKE_TAIL_SPRITE = 13;
   const float PI = 3.14;
   float halfsize = (float)TILE_SIZE / 2;
   float angle = 0;
@@ -205,15 +301,15 @@ void Game::drawSnake() {
   }
 
   al_draw_rotated_bitmap(
-    spritesheet->get(0),
+    spritesheet->get(SNAKE_HEAD_SPRITE),
     halfsize, halfsize,
     head.x*TILE_SIZE + halfsize,
     head.y*TILE_SIZE + halfsize,
     angle,
     0);
-
+  
   if (snakeBody.size() <= 1) return;
-
+  
   // draw tail
   int dx, dy = 0;
   Position tail = snakeBody[0];
@@ -224,8 +320,6 @@ void Game::drawSnake() {
   if (dx < 0)  { angle = PI * 1.5; }
   if (dy > 0)  { angle = PI; }
   if (dy < 0)  { angle = 0 * PI;  }
-  
-
   al_draw_rotated_bitmap(
     spritesheet->get(SNAKE_TAIL_SPRITE),
     halfsize, halfsize,
@@ -234,8 +328,14 @@ void Game::drawSnake() {
     angle,
     0);
 
-  // draw the rest
   for (int i = 1; i < snakeBody.size() - 1; i++) {
+      Position part = snakeBody[i];
+      al_draw_bitmap(spritesheet->get(SNAKE_BODY_SPRITE), part.x * TILE_SIZE, part.y * TILE_SIZE, NULL);
+  }
+
+  // draw the rest
+  /*
+    for (int i = 1; i < snakeBody.size() - 1; i++) {
     // TODO: check previous and next element to determine which tile to draw
     Position prevPart = snakeBody[i-1];
     Position part = snakeBody[i];
@@ -255,6 +355,17 @@ void Game::drawSnake() {
       angle,
       0);
   }
+      */
+}
+
+void Game::drawBackground() {
+    al_hold_bitmap_drawing(true);
+    for (int y = 0; y < TILES_Y; y++) {
+        for (int x = 0; x < TILES_X; x++) {
+            al_draw_bitmap(spritesheet->get(7), x * TILE_SIZE, y * TILE_SIZE, NULL);
+        }
+    }
+    al_hold_bitmap_drawing(false);
 }
 
 void Game::drawFruits() {
@@ -263,30 +374,14 @@ void Game::drawFruits() {
   }
 }
 
-void Game::initGame()
-{
-    state = GAME_PLAYING;
-    score = 0;
-    if (snake) {
-        delete snake;
-    }
-    snake = new Snake(0, 0, 5, SNAKE_DOWN);
-
-}
-
 void Game::spawnFruit() {
   Position fruit{};
   do {
     fruit.x = rand()%TILES_X;
     fruit.y = rand()%TILES_Y;
-  } while (snake->isInside(fruit));
+  } while (snake->isInside(fruit) || collidesWithMap(fruit));
   fruits.push_back(fruit);
 }
-
-void Game::loadMaps() {
-
-}
-
 
 Game::~Game() {
   delete spritesheet;

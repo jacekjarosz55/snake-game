@@ -30,6 +30,9 @@
     <ClInclude Include="Util.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Game.cpp">
@@ -55,5 +58,24 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="map0.txt">
+      <Filter>Resource Files</Filter>
+    </Text>
+    <Text Include="map1.txt">
+      <Filter>Resource Files</Filter>
+    </Text>
+    <Text Include="map2.txt">
+      <Filter>Resource Files</Filter>
+    </Text>
+    <Text Include="map3.txt">
+      <Filter>Resource Files</Filter>
+    </Text>
+  </ItemGroup>
+  <ItemGroup>
+    <Font Include="Roboto-Bold.ttf">
+      <Filter>Resource Files</Filter>
+    </Font>
   </ItemGroup>
 </Project>

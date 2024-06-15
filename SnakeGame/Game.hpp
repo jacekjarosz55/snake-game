@@ -28,6 +28,8 @@ private:
   ALLEGRO_TIMER *timer;
   ALLEGRO_EVENT_QUEUE *eventQueue;
   ALLEGRO_DISPLAY *display;
+
+  double fontSize = 20;
   ALLEGRO_FONT *font;
 
   ALLEGRO_BITMAP *gameBuffer;
@@ -40,17 +42,19 @@ private:
 
   GameState state;
 
-  std::vector<std::vector<Position>> maps;
+  unsigned mapIndex;
+  unsigned mapCount = 4;
+  std::vector<Position> mapData;
 
   bool needsRedraw = false;
   bool exit = false;
   int score = -1;
 
+  
 
   std::vector<Position> fruits;
   
   void update();
-  void loadMaps();
   void onKeyDownGame(ALLEGRO_KEYBOARD_EVENT event);
   void onKeyDownMenu(ALLEGRO_KEYBOARD_EVENT event);
   bool collidesWithMap(Position pos);
@@ -58,6 +62,9 @@ private:
   void draw();
   void drawSnake();
   void drawFruits();
+  void loadMap();
+  void drawMap();
+  void drawBackground();
   void initGame();
   void initMenu();
   void updateGame();
