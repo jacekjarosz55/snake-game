@@ -46,7 +46,7 @@ Game::Game() {
   display = al_create_display(BUFFER_W*WINDOW_SCALE, BUFFER_H*WINDOW_SCALE);
   mustInit(display, "display");
 
-  font = al_load_ttf_font("Roboto-Bold.ttf",fontSize,NULL);
+  font = al_load_ttf_font("Roboto-Bold.ttf", fontSize, 0);
   mustInit(font, "font");
 
   spritesheet = new Spritesheet("spritesheet.png", 32);
@@ -109,7 +109,7 @@ void Game::drawMap() {
 
 
     for (Position &tile : mapData) {
-        al_draw_bitmap(spritesheet->get(9), tile.x*TILE_SIZE, tile.y*TILE_SIZE, NULL);
+        al_draw_bitmap(spritesheet->get(9), tile.x*TILE_SIZE, tile.y*TILE_SIZE, 0);
     }
 }
 
@@ -164,6 +164,7 @@ void Game::update() {
     }
 }
 void Game::gameOver() {
+    if (hardMode) score *= 2;
     al_play_sample(gameOverSound, 1.0, 0.0, 1.0, ALLEGRO_PLAYMODE_ONCE, NULL);
     initMenu();
 }
@@ -260,19 +261,19 @@ void Game::drawMenu() {
 
     mapText << "Map: " << mapIndex << " (Arrow keys to select)";
 
-    hardModeText << "Hard mode: " << (hardMode ? "Enabled" : "Disabled") << " (X to toggle)";
+    hardModeText << "Hard mode: " << (hardMode ? "Enabled (2x score)" : "Disabled") << " (X to toggle)";
 
     colorText << "Snake color: " << ((snakeColor == SNAKE_COLOR_DEFAULT) ? "Default" : "Alternative") << " (C to switch)";
 
 
 
     al_clear_to_color(al_map_rgb(0, 0, 0));
-    al_draw_text(font, al_map_rgb(255, 255, 255), 10, fontSize, NULL, (score >= 0) ? scoreText.str().c_str() : "Welcome to Snake!");
-    al_draw_text(font, al_map_rgb(255, 255, 255), 10, fontSize*2, NULL, mapText.str().c_str());
-    al_draw_text(font, al_map_rgb(255, 255, 255), 10, fontSize*3, NULL, colorText.str().c_str());
-    al_draw_text(font, al_map_rgb(255, 255, 255), 10, fontSize*4, NULL, hardModeText.str().c_str());
-    al_draw_text(font, al_map_rgb(255, 255, 255), 10, fontSize*5, NULL, "Space: start game");
-    al_draw_text(font, al_map_rgb(255, 255, 255), 10, fontSize*6, NULL, "Escape: exit game");
+    al_draw_text(font, al_map_rgb(255, 255, 255), 10, fontSize, 0, (score >= 0) ? scoreText.str().c_str() : "Welcome to Snake!");
+    al_draw_text(font, al_map_rgb(255, 255, 255), 10, fontSize*2, 0, mapText.str().c_str());
+    al_draw_text(font, al_map_rgb(255, 255, 255), 10, fontSize*3, 0, colorText.str().c_str());
+    al_draw_text(font, al_map_rgb(255, 255, 255), 10, fontSize*4, 0, hardModeText.str().c_str());
+    al_draw_text(font, al_map_rgb(255, 255, 255), 10, fontSize*5, 0, "Space: start game");
+    al_draw_text(font, al_map_rgb(255, 255, 255), 10, fontSize*6, 0, "Escape: exit game");
     al_flip_display();
 }
 
@@ -376,7 +377,7 @@ void Game::drawSnake() {
 
   for (int i = 1; i < snakeBody.size() - 1; i++) {
       Position part = snakeBody[i];
-      al_draw_bitmap(spritesheet->get(snakeBodySprite), part.x * TILE_SIZE, part.y * TILE_SIZE, NULL);
+      al_draw_bitmap(spritesheet->get(snakeBodySprite), part.x * TILE_SIZE, part.y * TILE_SIZE, 0);
   }
 
   // draw the rest
@@ -408,7 +409,7 @@ void Game::drawBackground() {
     al_hold_bitmap_drawing(true);
     for (int y = 0; y < TILES_Y; y++) {
         for (int x = 0; x < TILES_X; x++) {
-            al_draw_bitmap(spritesheet->get(10), x * TILE_SIZE, y * TILE_SIZE, NULL);
+            al_draw_bitmap(spritesheet->get(10), x * TILE_SIZE, y * TILE_SIZE, 0);
         }
     }
     al_hold_bitmap_drawing(false);
