@@ -115,4 +115,9 @@ void Snake::addLength(unsigned len) {
 SnakeDirection Snake::getDirection() const {
   return _direction;
 }
-
+//SnakeColor Snake::getColor() const {
+//    return _color;
+//}
+//void Snake::setColor(SnakeColor color) {
+//    _color = color;
+//}

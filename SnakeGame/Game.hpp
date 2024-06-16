@@ -4,6 +4,7 @@
 #include <allegro5/bitmap.h>
 #include <allegro5/events.h>
 #include <allegro5/timer.h>
+#include <allegro5/allegro_audio.h>
 #include <allegro5/allegro_image.h>
 #include <vector>
 
@@ -25,9 +26,15 @@ private:
   const unsigned BUFFER_W = TILE_SIZE * TILES_X;
   const unsigned BUFFER_H = TILE_SIZE * TILES_Y;
 
+  bool hardMode = false;
+  unsigned snakeColor = SNAKE_COLOR_DEFAULT;
+
   ALLEGRO_TIMER *timer;
   ALLEGRO_EVENT_QUEUE *eventQueue;
   ALLEGRO_DISPLAY *display;
+
+  ALLEGRO_SAMPLE *gameOverSound;
+  ALLEGRO_SAMPLE *pickupSound;
 
   double fontSize = 20;
   ALLEGRO_FONT *font;
@@ -71,6 +78,7 @@ private:
   void updateMenu();
   void drawGame();
   void drawMenu();
+  void gameOver();
 public:
   Game();
   ~Game();

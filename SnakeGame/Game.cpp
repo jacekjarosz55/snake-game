@@ -5,6 +5,8 @@
 #include <allegro5/bitmap.h>
 #include <allegro5/bitmap_draw.h>
 #include <allegro5/bitmap_io.h>
+#include <allegro5/allegro_audio.h>
+#include<allegro5/allegro_acodec.h>
 #include <cstdlib>
 #include <iostream>
 #include <sstream>
@@ -19,8 +21,17 @@ Game::Game() {
   mustInit(al_init(), "allegro");
   mustInit(al_install_keyboard(), "keyboard module");
   mustInit(al_init_image_addon(), "image addon");
-   mustInit(al_init_font_addon(), "font addon");
+  mustInit(al_init_font_addon(), "font addon");
   mustInit(al_init_ttf_addon(), "ttf addon");
+
+  mustInit(al_install_audio(), "audio");
+  mustInit(al_init_acodec_addon(), "audio codecs");
+  mustInit(al_reserve_samples(16), "reserve samples");
+
+  pickupSound = al_load_sample("pickup.wav");
+  mustInit(pickupSound, "pickup sound");
+  gameOverSound = al_load_sample("gameOver.wav");
+  mustInit(gameOverSound, "game over sound");
 
   timer = al_create_timer(1.0 / 30.0); 
   mustInit(timer, "timer");
@@ -29,6 +40,8 @@ Game::Game() {
   mustInit(eventQueue, "event queue");
   
   gameBuffer = al_create_bitmap(BUFFER_W, BUFFER_H);
+
+  
 
   display = al_create_display(BUFFER_W*WINDOW_SCALE, BUFFER_H*WINDOW_SCALE);
   mustInit(display, "display");
@@ -96,7 +109,7 @@ void Game::drawMap() {
 
 
     for (Position &tile : mapData) {
-        al_draw_bitmap(spritesheet->get(5), tile.x*TILE_SIZE, tile.y*TILE_SIZE, NULL);
+        al_draw_bitmap(spritesheet->get(9), tile.x*TILE_SIZE, tile.y*TILE_SIZE, NULL);
     }
 }
 
@@ -150,27 +163,31 @@ void Game::update() {
         break;
     }
 }
-
+void Game::gameOver() {
+    al_play_sample(gameOverSound, 1.0, 0.0, 1.0, ALLEGRO_PLAYMODE_ONCE, NULL);
+    initMenu();
+}
 void Game::updateMenu() {
 
 }
 
 void Game::updateGame() {
   frameCounter++;
-  // TODO: replace '4' with snake speed
-  if (frameCounter % 4 == 0) {
+  if (frameCounter % (hardMode ? 3 : 4) == 0) {
     snake->step();
     score += 1;
     auto head = snake->getHead();
     if (snake->hasCollidedWithSelf() || collidesWithMap(head) || 
       head.x < 0 || head.x >= TILES_X || head.y < 0 || head.y >= TILES_Y) {
-        initMenu();
+        // game over
+        gameOver();
     }
 
 
     for (int i = 0; i < fruits.size(); i++) {
       if(snake->hasCollidedWith(fruits[i])) {
         fruits.erase(fruits.begin() + i);
+        al_play_sample(pickupSound, 1.0, 0.0, 1.0, ALLEGRO_PLAYMODE_ONCE, NULL);
         score += 10;
         snake->addLength(1);
         spawnFruit();
@@ -196,6 +213,19 @@ void Game::onKeyDownMenu(ALLEGRO_KEYBOARD_EVENT event) {
 
     if (event.keycode == ALLEGRO_KEY_LEFT) {
         mapIndex = (mapIndex - 1) % mapCount;
+    }
+
+    if (event.keycode == ALLEGRO_KEY_C) {
+        if (snakeColor == SNAKE_COLOR_DEFAULT) {
+            snakeColor = SNAKE_COLOR_ALT;
+        }
+        else {
+            snakeColor = SNAKE_COLOR_DEFAULT;
+        }
+    }
+
+    if (event.keycode == ALLEGRO_KEY_X) {
+        hardMode = !hardMode;
     }
 }
 
@@ -225,21 +255,24 @@ void Game::onKeyDownGame(ALLEGRO_KEYBOARD_EVENT event) {
 
 void Game::drawMenu() {
     
-    std::stringstream mapText, snakeText;
-    mapText << "MAP: " << mapIndex;
+    std::stringstream mapText, scoreText, hardModeText, colorText;
+    scoreText << "Game Over! Score: " << score;
 
-    snakeText << "SNAKE";
-    if (score >= 0) {
-        snakeText << ", WYNIK: " << score;
-    }
+    mapText << "Map: " << mapIndex << " (Arrow keys to select)";
+
+    hardModeText << "Hard mode: " << (hardMode ? "Enabled" : "Disabled") << " (X to toggle)";
+
+    colorText << "Snake color: " << ((snakeColor == SNAKE_COLOR_DEFAULT) ? "Default" : "Alternative") << " (C to switch)";
+
 
 
     al_clear_to_color(al_map_rgb(0, 0, 0));
-    al_draw_text(font, al_map_rgb(255, 255, 255), 10, fontSize, NULL, snakeText.str().c_str());
+    al_draw_text(font, al_map_rgb(255, 255, 255), 10, fontSize, NULL, (score >= 0) ? scoreText.str().c_str() : "Welcome to Snake!");
     al_draw_text(font, al_map_rgb(255, 255, 255), 10, fontSize*2, NULL, mapText.str().c_str());
-    al_draw_text(font, al_map_rgb(255, 255, 255), 10, fontSize*3, NULL, "Arrow keys: select map");
-    al_draw_text(font, al_map_rgb(255, 255, 255), 10, fontSize*4, NULL, "Space: start game");
-    al_draw_text(font, al_map_rgb(255, 255, 255), 10, fontSize*5, NULL, "Escape: exit game");
+    al_draw_text(font, al_map_rgb(255, 255, 255), 10, fontSize*3, NULL, colorText.str().c_str());
+    al_draw_text(font, al_map_rgb(255, 255, 255), 10, fontSize*4, NULL, hardModeText.str().c_str());
+    al_draw_text(font, al_map_rgb(255, 255, 255), 10, fontSize*5, NULL, "Space: start game");
+    al_draw_text(font, al_map_rgb(255, 255, 255), 10, fontSize*6, NULL, "Escape: exit game");
     al_flip_display();
 }
 
@@ -274,12 +307,24 @@ void Game::drawGame() {
 
 
 void Game::drawSnake() {
-  const unsigned SNAKE_HEAD_SPRITE = 8;
-  const unsigned SNAKE_BODY_SPRITE = 9;
-  const unsigned SNAKE_TAIL_SPRITE = 13;
-  const float PI = 3.14;
-  float halfsize = (float)TILE_SIZE / 2;
-  float angle = 0;
+    unsigned snakeHeadSprite = 0;
+    unsigned snakeBodySprite = 0;
+    unsigned snakeTailSprite = 0;
+    switch (snakeColor) {
+    case SNAKE_COLOR_DEFAULT:
+        snakeHeadSprite = 0;
+        snakeBodySprite = 1;
+        snakeTailSprite = 2;
+        break;
+    case SNAKE_COLOR_ALT:
+        snakeHeadSprite = 4;
+        snakeBodySprite = 5;
+        snakeTailSprite = 6;
+        break;
+    }
+    const float PI = 3.14;
+    float halfsize = (float)TILE_SIZE / 2;
+    float angle = 0;
 
 
   // draw head
@@ -301,7 +346,7 @@ void Game::drawSnake() {
   }
 
   al_draw_rotated_bitmap(
-    spritesheet->get(SNAKE_HEAD_SPRITE),
+    spritesheet->get(snakeHeadSprite),
     halfsize, halfsize,
     head.x*TILE_SIZE + halfsize,
     head.y*TILE_SIZE + halfsize,
@@ -316,12 +361,13 @@ void Game::drawSnake() {
   Position tailNext = snakeBody[1];
   dx = tailNext.x - tail.x;
   dy = tailNext.y - tail.y;
-  if (dx > 0)  { angle = PI * 0.5; }
-  if (dx < 0)  { angle = PI * 1.5; }
-  if (dy > 0)  { angle = PI; }
-  if (dy < 0)  { angle = 0 * PI;  }
+  if (dx > 0)  { angle = PI * 1; }
+  if (dx < 0)  { angle = PI * 0; }
+  if (dy > 0)  { angle = PI * 1.5; }
+  if (dy < 0)  { angle = PI * 0.5; }
+  
   al_draw_rotated_bitmap(
-    spritesheet->get(SNAKE_TAIL_SPRITE),
+    spritesheet->get(snakeTailSprite),
     halfsize, halfsize,
     tail.x*TILE_SIZE + halfsize,
     tail.y*TILE_SIZE + halfsize,
@@ -330,7 +376,7 @@ void Game::drawSnake() {
 
   for (int i = 1; i < snakeBody.size() - 1; i++) {
       Position part = snakeBody[i];
-      al_draw_bitmap(spritesheet->get(SNAKE_BODY_SPRITE), part.x * TILE_SIZE, part.y * TILE_SIZE, NULL);
+      al_draw_bitmap(spritesheet->get(snakeBodySprite), part.x * TILE_SIZE, part.y * TILE_SIZE, NULL);
   }
 
   // draw the rest
@@ -362,7 +408,7 @@ void Game::drawBackground() {
     al_hold_bitmap_drawing(true);
     for (int y = 0; y < TILES_Y; y++) {
         for (int x = 0; x < TILES_X; x++) {
-            al_draw_bitmap(spritesheet->get(7), x * TILE_SIZE, y * TILE_SIZE, NULL);
+            al_draw_bitmap(spritesheet->get(10), x * TILE_SIZE, y * TILE_SIZE, NULL);
         }
     }
     al_hold_bitmap_drawing(false);
@@ -370,7 +416,7 @@ void Game::drawBackground() {
 
 void Game::drawFruits() {
   for (auto fruit : fruits) {
-    al_draw_bitmap(spritesheet->get(4), fruit.x*TILE_SIZE, fruit.y*TILE_SIZE, 0);
+    al_draw_bitmap(spritesheet->get(8), fruit.x*TILE_SIZE, fruit.y*TILE_SIZE, 0);
   }
 }
 
@@ -386,6 +432,8 @@ void Game::spawnFruit() {
 Game::~Game() {
   delete spritesheet;
   delete snake;
+  al_destroy_sample(gameOverSound);
+  al_destroy_sample(pickupSound);
   al_destroy_font(font);
   al_destroy_bitmap(gameBuffer);
   al_destroy_display(display);

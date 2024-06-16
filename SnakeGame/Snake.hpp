@@ -17,6 +17,10 @@ enum SnakeDirection {
   SNAKE_DOWN = 3
 };
 
+enum SnakeColor {
+	SNAKE_COLOR_DEFAULT,
+	SNAKE_COLOR_ALT
+};
 
 
 class Snake {
@@ -25,6 +29,8 @@ private:
   std::deque<Position> _body;
   std::queue<SnakeDirection> _moves;
   SnakeDirection _direction;
+
+  
 public: 
   Snake(int x, int y, int resize, SnakeDirection direction);
   static SnakeMove getMove(SnakeDirection direction);
@@ -36,6 +42,10 @@ public:
   bool hasCollidedWith(Position pos);
   bool hasCollidedWithSelf();
   void addLength(unsigned len);
+
+  SnakeColor getColor() const;
+  void setColor(SnakeColor color);
+
 
   void turn(SnakeDirection direction);
 

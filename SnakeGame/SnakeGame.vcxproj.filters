@@ -78,4 +78,12 @@
       <Filter>Resource Files</Filter>
     </Font>
   </ItemGroup>
+  <ItemGroup>
+    <Media Include="gameOver.wav">
+      <Filter>Resource Files</Filter>
+    </Media>
+    <Media Include="pickup.wav">
+      <Filter>Resource Files</Filter>
+    </Media>
+  </ItemGroup>
 </Project>

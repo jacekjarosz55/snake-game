@@ -167,6 +167,10 @@
   <ItemGroup>
     <Font Include="Roboto-Bold.ttf" />
   </ItemGroup>
+  <ItemGroup>
+    <Media Include="gameOver.wav" />
+    <Media Include="pickup.wav" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
     <Import Project="..\packages\AllegroDeps.1.14.0\build\native\AllegroDeps.targets" Condition="Exists('..\packages\AllegroDeps.1.14.0\build\native\AllegroDeps.targets')" />
