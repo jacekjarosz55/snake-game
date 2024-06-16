@@ -77,6 +77,7 @@
     <Allegro_AddonAudio>true</Allegro_AddonAudio>
     <Allegro_AddonAcodec>true</Allegro_AddonAcodec>
     <Allegro_AddonFont>true</Allegro_AddonFont>
+    <CopyLocalDeploymentContent>true</CopyLocalDeploymentContent>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -159,17 +160,31 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <Text Include="map0.txt" />
-    <Text Include="map1.txt" />
-    <Text Include="map2.txt" />
-    <Text Include="map3.txt" />
+    <Text Include="map0.txt">
+      <DeploymentContent>true</DeploymentContent>
+    </Text>
+    <Text Include="map1.txt">
+      <DeploymentContent>true</DeploymentContent>
+    </Text>
+    <Text Include="map2.txt">
+      <DeploymentContent>true</DeploymentContent>
+    </Text>
+    <Text Include="map3.txt">
+      <DeploymentContent>true</DeploymentContent>
+    </Text>
   </ItemGroup>
   <ItemGroup>
-    <Font Include="Roboto-Bold.ttf" />
+    <Font Include="Roboto-Bold.ttf">
+      <DeploymentContent>true</DeploymentContent>
+    </Font>
   </ItemGroup>
   <ItemGroup>
-    <Media Include="gameOver.wav" />
-    <Media Include="pickup.wav" />
+    <Media Include="gameOver.wav">
+      <DeploymentContent>true</DeploymentContent>
+    </Media>
+    <Media Include="pickup.wav">
+      <DeploymentContent>true</DeploymentContent>
+    </Media>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
