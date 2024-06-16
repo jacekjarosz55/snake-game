@@ -235,7 +235,7 @@ void Game::initMenu() {
 
 void Game::onKeyDownGame(ALLEGRO_KEYBOARD_EVENT event) {
   if (event.keycode == ALLEGRO_KEY_ESCAPE) {
-      initMenu();
+      gameOver();
   }
 
   if (event.keycode == ALLEGRO_KEY_LEFT) {
