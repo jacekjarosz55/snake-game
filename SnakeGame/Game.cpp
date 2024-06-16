@@ -176,7 +176,7 @@ void Game::updateGame() {
   frameCounter++;
   if (frameCounter % (hardMode ? 3 : 4) == 0) {
     snake->step();
-    score += 1;
+    //score += 1;
     auto head = snake->getHead();
     if (snake->hasCollidedWithSelf() || collidesWithMap(head) || 
       head.x < 0 || head.x >= TILES_X || head.y < 0 || head.y >= TILES_Y) {
@@ -189,7 +189,7 @@ void Game::updateGame() {
       if(snake->hasCollidedWith(fruits[i])) {
         fruits.erase(fruits.begin() + i);
         al_play_sample(pickupSound, 1.0, 0.0, 1.0, ALLEGRO_PLAYMODE_ONCE, NULL);
-        score += 10;
+        score += 1;
         snake->addLength(1);
         spawnFruit();
         break;
