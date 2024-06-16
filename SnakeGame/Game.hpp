@@ -45,7 +45,7 @@ private:
 
   unsigned frameCounter = 0;
 
-  Snake *snake;
+  Snake *snake = nullptr;
 
   GameState state;
 
